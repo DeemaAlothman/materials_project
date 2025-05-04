@@ -1,0 +1,103 @@
+generator client {
+    provider = "prisma-client-js"
+  
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Agents {
+  id         Int      @id @default(autoincrement())
+  agent_name String   @db.VarChar(100)
+  password   String   @db.Text
+  role       String   @db.VarChar(100)
+
+  materials  Materials[] @relation("AgentMaterials")
+  orders     Orders[] @relation("OrdersAgent")
+  notifications_and_notes NotificationsAndNotes[] @relation("NotificationsAgent")
+}
+
+model Clients {
+  id           Int     @id @default(autoincrement())
+  client_name  String  @db.VarChar(100)
+  password     String  @db.Text
+  phone_number String  @db.Text
+  city         String  @db.VarChar(20)
+
+  orders       Orders[] @relation("OrdersClient")
+  notifications_and_notes NotificationsAndNotes[] @relation("NotificationsClient")
+}
+
+model Materials {
+  id          Int     @id @default(autoincrement())
+  name        String  @db.VarChar(200)
+  date_added  Int
+  agent_id    Int?
+
+  agent       Agents?  @relation("AgentMaterials", fields: [agent_id], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  categories_of_materials CategoriesOfMaterials[] @relation("MaterialCategories")
+}
+
+model CategoriesOfMaterials {
+  id          Int      @id @default(autoincrement())
+  name        String   @db.VarChar(200)
+  image       String   @db.VarChar(200)
+  material_id Int
+  parent_id   Int?
+
+  material    Materials @relation("MaterialCategories", fields: [material_id], references: [id], onUpdate: Cascade)
+  categories_details CategoriesDetails[] @relation("CategoryDetailsMaterial")
+}
+
+model CategoriesDetails {
+  id                   Int     @id @default(autoincrement())
+  It_detail_name       String  @db.VarChar(200)
+  code                 String  @db.VarChar(100)
+  dimensions           String  @db.Text
+  total                BigInt
+  rest                 Int
+  remaining            Int
+  category_material_id Int
+
+  categories_of_materials CategoriesOfMaterials @relation("CategoryDetailsMaterial", fields: [category_material_id], references: [id])
+  order_details        OrderDetails[] @relation("CategoryDetailsOrderDetails")
+}
+
+model Orders {
+  id            Int      @id @default(autoincrement())
+  client_id     Int
+  agent_id      Int
+  order_date    DateTime @db.Date
+  order_status  String   @db.VarChar(50)
+  order         String   @db.Text
+
+  client        Clients  @relation("OrdersClient", fields: [client_id], references: [id], onUpdate: Cascade)
+  agent         Agents   @relation("OrdersAgent", fields: [agent_id], references: [id], onUpdate: Cascade)
+  order_details OrderDetails[] @relation("OrderDetailsOrder")
+}
+
+model OrderDetails {
+  id                   Int     @id @default(autoincrement())
+  categories_detail_id Int
+  count                Int
+  price                Float   @db.Double
+  order_id             Int
+
+  categories_details   CategoriesDetails @relation("CategoryDetailsOrderDetails", fields: [categories_detail_id], references: [id])
+  order                Orders @relation("OrderDetailsOrder", fields: [order_id], references: [id], onUpdate: Cascade)
+}
+
+model NotificationsAndNotes {
+  id          Int      @id @default(autoincrement())
+  client_id   Int
+  agent_id    Int
+  title       String   @db.Text
+  body        String   @db.Text
+  Notice_Date DateTime @db.Date
+
+  client      Clients  @relation("NotificationsClient", fields: [client_id], references: [id], onUpdate: Cascade)
+  agent       Agents   @relation("NotificationsAgent", fields: [agent_id], references: [id], onUpdate: Cascade)
+}
+
